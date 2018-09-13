@@ -11,7 +11,11 @@
 // The data structure is mainly optimized for performance when a large
 // number of edit operations are made.  The underlying tree is not
 // automatically rebalanced as most situations can do without this
-// step.
+// step.  A Flatten() method is provided to construct a somewhat
+// balanced tree in an efficient manner but this is not a true
+// balancing. In particular, the number of nodes depends on the number
+// of edits and the root node has unbounded branching factor. But in
+// most practical sitations, this will work fine.
 package trope
 
 // Slicer is an optional interface to be implemented by the leaf-node
@@ -53,18 +57,60 @@ func New(initial interface{}, count int) Node {
 // ForEach recursively traverses the node and its children calling the
 // provided function on all the Leaf values
 func (n Node) ForEach(fn func(v interface{}, count int)) {
+	n.forEach(func(leaf Node) {
+		fn(leaf.Leaf, leaf.Count)
+	})
+}
+
+func (n Node) forEach(fn func(n Node)) {
 	if n.Count == 0 {
 		return
 	}
 
 	if n.Children == nil {
-		fn(n.Leaf, n.Count)
+		fn(n)
 		return
 	}
 
 	for _, child := range n.Children {
-		child.ForEach(fn)
+		child.forEach(fn)
 	}
+}
+
+// Flatten constructs a 2-level list. The leaf nodes are all
+// aggregated into the first level in groups of the specified chunk
+// size and these are all then aggregated into the root node.
+//
+// Note that the root node won't honor the chunk size.
+func (n Node) Flatten(chunkSize int) Node {
+	children := []Node(nil)
+	leafs := []Node(nil)
+	count := 0
+	n.forEach(func(leaf Node) {
+		leafs = append(leafs, leaf)
+		count += leaf.Count
+		if len(leafs) == chunkSize {
+			children = append(children, Node{
+				ID:       n.getID(),
+				getID:    n.getID,
+				Children: leafs,
+				Count:    count,
+			})
+			count = 0
+			leafs = nil
+		}
+	})
+	if leafs != nil {
+		children = append(children, Node{
+			ID:       n.getID(),
+			getID:    n.getID,
+			Children: leafs,
+			Count:    count,
+		})
+	}
+	n.ID = n.getID()
+	n.Children = children
+	return n
 }
 
 // Slice returns a Node which references only the elements between

@@ -99,7 +99,7 @@ func TestInvalidOffsets(t *testing.T) {
 	})
 }
 
-func TestRandom(t *testing.T) {
+func TestRandomSplices(t *testing.T) {
 	var n trope.Node
 	var s string
 
@@ -119,6 +119,30 @@ func TestRandom(t *testing.T) {
 	}
 
 	benchmarkRun(init, splice)
+}
+
+func TestFlatten(t *testing.T) {
+	zero := trope.New(Slicer(""), 0)
+	if x := toString(zero.Flatten(100)); x != "" {
+		t.Fatal("could not flatten zero", x)
+	}
+
+	hello := trope.New(Slicer("hello"), 5)
+	flat := hello.Flatten(100)
+	if x := toString(flat); x != "hello" {
+		t.Fatal("Single chunk flattening failed", x)
+	}
+
+	hello4 := hello.Splice(0, 0, hello).Splice(0, 0, hello).Splice(0, 0, hello)
+	flat = hello4.Flatten(3)
+	if x := toString(flat); x != "hellohellohellohello" {
+		t.Fatal("Single chunk flattening failed", x)
+	}
+
+	flat = hello4.Flatten(2)
+	if x := toString(flat); x != "hellohellohellohello" {
+		t.Fatal("Single chunk flattening failed", x)
+	}
 }
 
 func toString(n trope.Node) string {
