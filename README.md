@@ -23,10 +23,11 @@ $> go test --bench=. -strlen=1000000
 ```
 
 The following table shows the time (in microseconds) taken for each of
-the implementations for 100 random splice operations. Trope performs
+the implementations for 100 random splice operations (on my machine).
+Trope performs
 at a relatively fixed cost without much dependency on the size of the
-array but this fixed cost only outweight the raw slice performance at
-around 10k size.
+array but this fixed cost only outweighs the raw slice performance at
+around 15k size.
 
 
 | String Size | 5k | 10k | 100k | 1M |
