@@ -118,7 +118,7 @@ func TestRandomSplices(t *testing.T) {
 		}
 	}
 
-	benchmarkRun(init, splice)
+	benchmarkRun(500000, init, splice)
 }
 
 func TestFlatten(t *testing.T) {
@@ -157,4 +157,9 @@ type Slicer string
 
 func (s Slicer) Slice(offset, count int) interface{} {
 	return s[offset : offset+count]
+}
+
+func (s Slicer) Splice(offset, count int, replacement interface{}) interface{} {
+	r := replacement.(Slicer)
+	return s[:offset] + r + s[offset+count:]
 }

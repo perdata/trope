@@ -16,6 +16,36 @@
 // balancing. In particular, the number of nodes depends on the number
 // of edits and the root node has unbounded branching factor. But in
 // most practical sitations, this will work fine.
+//
+// The rope datastructure is often too expensive for fairly small
+// arrays. The Hybrid type is defined to get the best of both worlds
+// by using the regular array implementation for small counts and
+// switching to the more complex structure at a configured high water
+// mark.
+//
+// Benchmarks
+//
+// These benchmarks include 100 iterations of random slicing (on top
+// of the previous result).  The comparison is between trope.Node,
+// trope.Hybrid and a simple string-slice based splice operation.
+//
+// String size of 5k:
+//
+//    BenchmarkTrope-4      	   10000	    220341 ns/op	  211384 B/op	    1871 allocs/op
+//    BenchmarkHybrid-4     	   20000	     88510 ns/op	  292664 B/op	     413 allocs/op
+//    BenchmarkString-4     	   20000	     71310 ns/op	  283440 B/op	     200 allocs/op
+//
+//
+// String size of 200k:
+//
+//    BenchmarkTrope-4      	   10000	    186928 ns/op	  188264 B/op	    1583 allocs/op
+//    BenchmarkHybrid-4     	   10000	    193612 ns/op	  188264 B/op	    1583 allocs/op
+//    BenchmarkString-4     	    1000	   2243631 ns/op	20226499 B/op	     200 allocs/op
+//
+//
+// The benchmarks are obviously specific to the hardware but it gives
+// an idea about the relative performance characterestics.
+//
 package trope
 
 // Slicer is an optional interface to be implemented by the leaf-node
@@ -188,6 +218,11 @@ func (n Node) Splice(offset, count int, replacement Node) Node {
 	return n.Slice(0, offset).join(replacement).join(right)
 }
 
+// Threshold at which node height is increased in favor of creating
+// larger chlidren array.  This threshold is very likely dependent on
+// hardware and such but the number is high enough for this to be rare
+const limit = 100
+
 func (n Node) join(o Node) Node {
 	result := n
 	switch {
@@ -196,7 +231,7 @@ func (n Node) join(o Node) Node {
 	case o.Count == 0:
 	case n.Children == nil && o.Children == nil:
 		result.Children = []Node{n, o}
-	case n.Children == nil:
+	case n.Children == nil, o.Children != nil && len(n.Children) > limit:
 		result.Children = append([]Node{n}, o.Children...)
 	case o.Children == nil:
 		result.Children = append(append([]Node(nil), n.Children...), o)

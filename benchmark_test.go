@@ -26,6 +26,18 @@ func BenchmarkTrope(b *testing.B) {
 	benchmark(b, init, splice)
 }
 
+func BenchmarkHybrid(b *testing.B) {
+	hh := trope.Hybrid{15000, 10000, Slicer(""), 0, trope.Node{}}
+	init := func(str string) {
+		hh = trope.Hybrid{15000, 10000, Slicer(""), 0, trope.New(Slicer(str), len(str))}
+	}
+	splice := func(offset, count int, r string) {
+		rep := trope.Hybrid{150000, 10000, Slicer(r), len(r), trope.Node{}}
+		hh = hh.Splice(offset, count, rep)
+	}
+	benchmark(b, init, splice)
+}
+
 func BenchmarkString(b *testing.B) {
 	s := ""
 	init := func(str string) {
@@ -95,13 +107,12 @@ func initRandomString(size int) {
 
 func benchmark(b *testing.B, init func(string), splice func(offset, count int, v string)) {
 	for n := 0; n < b.N; n++ {
-		benchmarkRun(init, splice)
+		benchmarkRun(100, init, splice)
 	}
 }
 
-func benchmarkRun(init func(string), splice func(offset, count int, v string)) {
+func benchmarkRun(iter int, init func(string), splice func(offset, count int, v string)) {
 	rand.Seed(42)
-	iter := 100
 	str := largeRandomString
 	init(str)
 	size := len(str)
