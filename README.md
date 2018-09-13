@@ -3,7 +3,7 @@
 [![Status](https://travis-ci.org/perdata/trope.svg?branch=master)](https://travis-ci.org/perdata/trope?branch=master)
 [![GoDoc](https://godoc.org/github.com/perdata/trope?status.svg)](https://godoc.org/github.com/perdata/trope)
 [![codecov](https://codecov.io/gh/perdata/trope/branch/master/graph/badge.svg)](https://codecov.io/gh/perdata/trope)
-[![Go Report Card](https://goreportcard.com/badge/github.com/perdata/trope)](https://goreportcard.com/report/github.com/perdata/trope
+[![GoReportCard](https://goreportcard.com/badge/github.com/perdata/trope)](https://goreportcard.com/report/github.com/perdata/trope)
 
 Trope is a golang package for dealing with very large immutable arrays
 at decent performance with respect to random access edits.
