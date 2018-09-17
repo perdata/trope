@@ -100,25 +100,25 @@ func TestInvalidOffsets(t *testing.T) {
 }
 
 func TestRandomSplices(t *testing.T) {
-	var n trope.Node
-	var s string
+	benchmarkTest(1, &validatedInitSplicer{}, 500000, 5)
+}
 
-	initRandomString(50)
-	defer initRandomString(strlen)
-	init := func(str string) {
-		s = str
-		n = trope.New(Slicer(str), len(str))
+type validatedInitSplicer struct {
+	tropeInitSplicer
+	stringInitSplicer
+}
+
+func (is *validatedInitSplicer) Init(str string) {
+	is.tropeInitSplicer.Init(str)
+	is.stringInitSplicer.Init(str)
+}
+
+func (is *validatedInitSplicer) Splice(offset, count int, r string) {
+	is.tropeInitSplicer.Splice(offset, count, r)
+	is.stringInitSplicer.Splice(offset, count, r)
+	if toString(is.tropeInitSplicer.Node) != is.stringInitSplicer.s {
+		panic("strings diverged")
 	}
-
-	splice := func(offset, count int, r string) {
-		s = s[:offset] + r + s[offset+count:]
-		n = n.Splice(offset, count, trope.New(Slicer(r), len(r)))
-		if toString(n) != s {
-			t.Fatal("Splice diverged from string splice", s, toString(n))
-		}
-	}
-
-	benchmarkRun(500000, init, splice)
 }
 
 func TestFlatten(t *testing.T) {

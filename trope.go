@@ -214,8 +214,55 @@ func (n Node) Splice(offset, count int, replacement Node) Node {
 	}
 
 	// slow path
+	children := n.Children
+	if len(children) > 0 {
+		first := children[0]
+		last := children[len(children)-1]
+		if offset >= first.Count || offset+count <= n.Count-last.Count {
+			return n.spliceChildren(offset, count, replacement)
+		}
+	}
+
+	// slower path
 	right := n.Slice(offset+count, n.Count-offset-count)
 	return n.Slice(0, offset).join(replacement).join(right)
+}
+
+func (n Node) spliceChildren(offset, count int, replacement Node) Node {
+	left, right, mid := 0, 0, 0
+	leftCount, rightCount, midCount := 0, 0, 0
+	seen := 0
+	for _, ch := range n.Children {
+		switch {
+		case seen+ch.Count <= offset:
+			left++
+			leftCount += ch.Count
+		case seen >= offset+count:
+			right++
+			rightCount += ch.Count
+		default:
+			mid++
+			midCount += ch.Count
+		}
+		seen += ch.Count
+	}
+	innerLeft := n.Children[left].Slice(0, offset-leftCount)
+	r := n.Children[left+mid-1]
+	offsetr := offset + count - (n.Count - rightCount - r.Count)
+	countr := r.Count - offsetr
+	innerRight := r.Slice(offsetr, countr)
+	inner := innerLeft.join(replacement).join(innerRight)
+	result := n
+	result.ID = n.getID()
+	result.Count = n.Count - count + replacement.Count
+	result.Children = n.Children[:left:left]
+	if len(inner.Children) > 0 {
+		result.Children = append(result.Children, inner.Children...)
+	} else {
+		result.Children = append(result.Children, inner)
+	}
+	result.Children = append(result.Children, n.Children[left+mid:]...)
+	return result
 }
 
 // Threshold at which node height is increased in favor of creating
